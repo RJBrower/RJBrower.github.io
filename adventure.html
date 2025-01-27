@@ -1,24 +1,28 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adventure Direction</title>
+    <script>
+        function generateAdventure() {
+            // Generate a random distance between 0.1 and 5 miles
+            var distance = (Math.random() * (5 - 0.1) + 0.1).toFixed(1);
+            
+            // Array of directions
+            var directions = ["North", "South", "East", "West"];
+            
+            // Generate a random direction
+            var direction = directions[Math.floor(Math.random() * directions.length)];
+            
+            // Display the result
+            document.getElementById("result").innerHTML = "Random Distance: " + distance + " miles<br>Direction: " + direction;
+        }
+    </script>
 </head>
 <body>
     <h1>Choose a Direction for Your Adventure!</h1>
-    <p>Random Distance: 0.2 miles</p>
-    <form action="#">
-        <label for="direction">Choose a direction:</label>
-        <select id="direction" name="direction">
-            <option value="north">North</option>
-            <option value="south">South</option>
-            <option value="east">East</option>
-            <option value="west">West</option>
-        </select>
-        <br><br>
-        <input type="submit" value="Go!">
-    </form>
+    <button onclick="generateAdventure()">Generate Adventure</button>
+    <p id="result"></p>
 </body>
 </html>

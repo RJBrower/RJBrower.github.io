@@ -1,0 +1,12 @@
+Setup GitHub Pages
+
+Checkers
+- 
+- 
+- 
+- 
+
+Adventure
+
+- give me an html page for choosing a direction to go (in a car). It's for an adventure! Also add a random distance between .1 miles and 5 miles.
+- excellent start, but let's make it more dynamic with some javascript! I want to hit a button and it return the random distance and direction.
