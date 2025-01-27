@@ -63,6 +63,7 @@
                 this.selectedPiece = null;
                 this.currentPlayer = 'red';
                 this.possibleMoves = [];
+                this.isJumpInProgress = false;
                 this.initializeBoard();
                 this.renderBoard();
                 this.updateTurnIndicator();
@@ -122,36 +123,58 @@
             updateTurnIndicator() {
                 const indicator = document.getElementById('turn-indicator');
                 indicator.textContent = `Current Turn: ${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}`;
+                if (this.isJumpInProgress) {
+                    indicator.textContent += " (Must complete jump sequence)";
+                }
             }
 
-            getPossibleMoves(row, col) {
+            getPossibleMoves(row, col, mustJump = false) {
                 const piece = this.board[row][col];
                 if (!piece) return [];
 
                 const moves = [];
                 const directions = piece.isKing ? [-1, 1] : piece.color === 'red' ? [-1] : [1];
+                const jumpMoves = [];
 
                 directions.forEach(dRow => {
                     [-1, 1].forEach(dCol => {
-                        // Check regular moves
-                        const newRow = row + dRow;
-                        const newCol = col + dCol;
-                        if (this.isValidPosition(newRow, newCol) && !this.board[newRow][newCol]) {
-                            moves.push({ row: newRow, col: newCol, isCapture: false });
+                        // Check captures
+                        const jumpRow = row + dRow * 2;
+                        const jumpCol = col + dCol * 2;
+                        const midRow = row + dRow;
+                        const midCol = col + dCol;
+
+                        if (this.isValidPosition(jumpRow, jumpCol) && 
+                            !this.board[jumpRow][jumpCol] && 
+                            this.board[midRow][midCol]?.color !== piece.color &&
+                            this.board[midRow][midCol] !== null) {
+                            jumpMoves.push({ row: jumpRow, col: jumpCol, isCapture: true });
                         }
 
-                        // Check captures
-                        const captureRow = row + dRow * 2;
-                        const captureCol = col + dCol * 2;
-                        if (this.isValidPosition(captureRow, captureCol) && 
-                            !this.board[captureRow][captureCol] && 
-                            this.board[newRow][newCol]?.color !== piece.color) {
-                            moves.push({ row: captureRow, col: captureCol, isCapture: true });
+                        // Check regular moves (only if no jumps are available and not in middle of jump sequence)
+                        if (!mustJump && jumpMoves.length === 0) {
+                            const moveRow = row + dRow;
+                            const moveCol = col + dCol;
+                            if (this.isValidPosition(moveRow, moveCol) && !this.board[moveRow][moveCol]) {
+                                moves.push({ row: moveRow, col: moveCol, isCapture: false });
+                            }
                         }
                     });
                 });
 
-                return moves;
+                return jumpMoves.length > 0 ? jumpMoves : moves;
+            }
+
+            hasJumpMoves(color) {
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (this.board[row][col]?.color === color) {
+                            const jumps = this.getPossibleMoves(row, col, true);
+                            if (jumps.length > 0) return true;
+                        }
+                    }
+                }
+                return false;
             }
 
             isValidPosition(row, col) {
@@ -161,19 +184,50 @@
             handleCellClick(row, col) {
                 const piece = this.board[row][col];
 
+                // If a piece is already selected
                 if (this.selectedPiece) {
                     const move = this.possibleMoves.find(m => m.row === row && m.col === col);
                     if (move) {
                         this.makeMove(move);
+                        // Check for additional jumps after a capture
+                        if (move.isCapture) {
+                            const additionalJumps = this.getPossibleMoves(move.row, move.col, true);
+                            if (additionalJumps.length > 0) {
+                                this.selectedPiece = { row: move.row, col: move.col };
+                                this.possibleMoves = additionalJumps;
+                                this.isJumpInProgress = true;
+                                this.renderBoard();
+                                this.updateTurnIndicator();
+                                return;
+                            }
+                        }
+                        this.selectedPiece = null;
+                        this.possibleMoves = [];
+                        this.isJumpInProgress = false;
+                        this.currentPlayer = this.currentPlayer === 'red' ? 'black' : 'red';
+                    } else {
+                        // If clicking on another valid piece of same color during non-jump sequence
+                        if (piece && piece.color === this.currentPlayer && !this.isJumpInProgress) {
+                            this.selectedPiece = { row, col };
+                            const mustJump = this.hasJumpMoves(this.currentPlayer);
+                            this.possibleMoves = this.getPossibleMoves(row, col, mustJump);
+                        } else {
+                            this.selectedPiece = null;
+                            this.possibleMoves = [];
+                        }
                     }
-                    this.selectedPiece = null;
-                    this.possibleMoves = [];
                 } else if (piece && piece.color === this.currentPlayer) {
-                    this.selectedPiece = { row, col };
-                    this.possibleMoves = this.getPossibleMoves(row, col);
+                    // New piece selection
+                    const mustJump = this.hasJumpMoves(this.currentPlayer);
+                    const moves = this.getPossibleMoves(row, col, mustJump);
+                    if (moves.length > 0) {
+                        this.selectedPiece = { row, col };
+                        this.possibleMoves = moves;
+                    }
                 }
 
                 this.renderBoard();
+                this.updateTurnIndicator();
             }
 
             makeMove(move) {
@@ -189,9 +243,6 @@
                     const capturedCol = (this.selectedPiece.col + move.col) / 2;
                     this.board[capturedRow][capturedCol] = null;
                 }
-
-                this.currentPlayer = this.currentPlayer === 'red' ? 'black' : 'red';
-                this.updateTurnIndicator();
             }
 
             shouldBecomeKing(row, color) {
