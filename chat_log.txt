@@ -1,5 +1,10 @@
 Setup GitHub Pages
 
+home
+#I created this
+#Copilot
+- give me a simple div in an html page that just shows the contents of a relative txt file
+
 Checkers
 #claude
 - Create a simple html page with an embedded javascript based game of checkers
