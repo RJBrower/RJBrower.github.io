@@ -1,11 +1,14 @@
 Setup GitHub Pages
 
 Checkers
+#claude
 - Create a simple html page with an embedded javascript based game of checkers
 - That's great. But I should not be able to move two spaces on my first turn. And I should be able to jump over multiple pieces if I can.
 - Great! Now when no more moves are available, erase the board and congratulate the winning color and give the option to start a new game
 
 Adventure
-
+#Copilot
 - give me an html page for choosing a direction to go (in a car). It's for an adventure! Also add a random distance between .1 miles and 5 miles.
 - excellent start, but let's make it more dynamic with some javascript! I want to hit a button and it return the random distance and direction.
+#claude
+- 
