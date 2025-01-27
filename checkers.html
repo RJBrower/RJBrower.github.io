@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Checkers</title>
+    <style>
+        .board {
+            width: 400px;
+            height: 400px;
+            border: 2px solid #333;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .black {
+            background-color: #769656;
+        }
+        .white {
+            background-color: #eeeed2;
+        }
+        .piece {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+        .red-piece {
+            background-color: #ff4444;
+        }
+        .black-piece {
+            background-color: #333;
+        }
+        .selected {
+            background-color: #baca44;
+        }
+        .possible-move {
+            background-color: #f6f669;
+        }
+        .king::after {
+            content: "♔";
+            font-size: 24px;
+            color: gold;
+            position: relative;
+            top: -8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Checkers</h1>
+    <div id="turn-indicator"></div>
+    <div class="board" id="board"></div>
+
+    <script>
+        class CheckersGame {
+            constructor() {
+                this.board = Array(8).fill().map(() => Array(8).fill(null));
+                this.selectedPiece = null;
+                this.currentPlayer = 'red';
+                this.possibleMoves = [];
+                this.initializeBoard();
+                this.renderBoard();
+                this.updateTurnIndicator();
+            }
+
+            initializeBoard() {
+                // Place initial pieces
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if ((row + col) % 2 === 1) {
+                            this.board[row][col] = { color: 'black', isKing: false };
+                        }
+                    }
+                }
+                for (let row = 5; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if ((row + col) % 2 === 1) {
+                            this.board[row][col] = { color: 'red', isKing: false };
+                        }
+                    }
+                }
+            }
+
+            renderBoard() {
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = `cell ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
+                        
+                        if (this.selectedPiece && this.selectedPiece.row === row && this.selectedPiece.col === col) {
+                            cell.classList.add('selected');
+                        }
+
+                        if (this.possibleMoves.some(move => move.row === row && move.col === col)) {
+                            cell.classList.add('possible-move');
+                        }
+
+                        const piece = this.board[row][col];
+                        if (piece) {
+                            const pieceDiv = document.createElement('div');
+                            pieceDiv.className = `piece ${piece.color}-piece`;
+                            if (piece.isKing) {
+                                pieceDiv.classList.add('king');
+                            }
+                            cell.appendChild(pieceDiv);
+                        }
+
+                        cell.addEventListener('click', () => this.handleCellClick(row, col));
+                        boardElement.appendChild(cell);
+                    }
+                }
+            }
+
+            updateTurnIndicator() {
+                const indicator = document.getElementById('turn-indicator');
+                indicator.textContent = `Current Turn: ${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}`;
+            }
+
+            getPossibleMoves(row, col) {
+                const piece = this.board[row][col];
+                if (!piece) return [];
+
+                const moves = [];
+                const directions = piece.isKing ? [-1, 1] : piece.color === 'red' ? [-1] : [1];
+
+                directions.forEach(dRow => {
+                    [-1, 1].forEach(dCol => {
+                        // Check regular moves
+                        const newRow = row + dRow;
+                        const newCol = col + dCol;
+                        if (this.isValidPosition(newRow, newCol) && !this.board[newRow][newCol]) {
+                            moves.push({ row: newRow, col: newCol, isCapture: false });
+                        }
+
+                        // Check captures
+                        const captureRow = row + dRow * 2;
+                        const captureCol = col + dCol * 2;
+                        if (this.isValidPosition(captureRow, captureCol) && 
+                            !this.board[captureRow][captureCol] && 
+                            this.board[newRow][newCol]?.color !== piece.color) {
+                            moves.push({ row: captureRow, col: captureCol, isCapture: true });
+                        }
+                    });
+                });
+
+                return moves;
+            }
+
+            isValidPosition(row, col) {
+                return row >= 0 && row < 8 && col >= 0 && col < 8;
+            }
+
+            handleCellClick(row, col) {
+                const piece = this.board[row][col];
+
+                if (this.selectedPiece) {
+                    const move = this.possibleMoves.find(m => m.row === row && m.col === col);
+                    if (move) {
+                        this.makeMove(move);
+                    }
+                    this.selectedPiece = null;
+                    this.possibleMoves = [];
+                } else if (piece && piece.color === this.currentPlayer) {
+                    this.selectedPiece = { row, col };
+                    this.possibleMoves = this.getPossibleMoves(row, col);
+                }
+
+                this.renderBoard();
+            }
+
+            makeMove(move) {
+                const piece = this.board[this.selectedPiece.row][this.selectedPiece.col];
+                this.board[move.row][move.col] = {
+                    ...piece,
+                    isKing: piece.isKing || this.shouldBecomeKing(move.row, piece.color)
+                };
+                this.board[this.selectedPiece.row][this.selectedPiece.col] = null;
+
+                if (move.isCapture) {
+                    const capturedRow = (this.selectedPiece.row + move.row) / 2;
+                    const capturedCol = (this.selectedPiece.col + move.col) / 2;
+                    this.board[capturedRow][capturedCol] = null;
+                }
+
+                this.currentPlayer = this.currentPlayer === 'red' ? 'black' : 'red';
+                this.updateTurnIndicator();
+            }
+
+            shouldBecomeKing(row, color) {
+                return (color === 'red' && row === 0) || (color === 'black' && row === 7);
+            }
+        }
+
+        // Start the game
+        new CheckersGame();
+    </script>
+</body>
+</html>
