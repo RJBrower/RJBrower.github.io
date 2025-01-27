@@ -49,11 +49,33 @@
             position: relative;
             top: -8px;
         }
+        .game-over {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .new-game-btn {
+            display: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px auto;
+        }
+        .new-game-btn:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
     <h1>Simple Checkers</h1>
     <div id="turn-indicator"></div>
+    <div id="game-over" class="game-over"></div>
+    <button id="new-game" class="new-game-btn" onclick="startNewGame()">Start New Game</button>
     <div class="board" id="board"></div>
 
     <script>
@@ -64,6 +86,7 @@
                 this.currentPlayer = 'red';
                 this.possibleMoves = [];
                 this.isJumpInProgress = false;
+                this.gameOver = false;
                 this.initializeBoard();
                 this.renderBoard();
                 this.updateTurnIndicator();
@@ -122,9 +145,13 @@
 
             updateTurnIndicator() {
                 const indicator = document.getElementById('turn-indicator');
-                indicator.textContent = `Current Turn: ${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}`;
-                if (this.isJumpInProgress) {
-                    indicator.textContent += " (Must complete jump sequence)";
+                if (!this.gameOver) {
+                    indicator.textContent = `Current Turn: ${this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1)}`;
+                    if (this.isJumpInProgress) {
+                        indicator.textContent += " (Must complete jump sequence)";
+                    }
+                } else {
+                    indicator.textContent = '';
                 }
             }
 
@@ -177,11 +204,37 @@
                 return false;
             }
 
+            hasAnyMoves(color) {
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (this.board[row][col]?.color === color) {
+                            const moves = this.getPossibleMoves(row, col, this.hasJumpMoves(color));
+                            if (moves.length > 0) return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            checkWinCondition() {
+                if (!this.hasAnyMoves(this.currentPlayer)) {
+                    const winner = this.currentPlayer === 'red' ? 'Black' : 'Red';
+                    const gameOverDiv = document.getElementById('game-over');
+                    gameOverDiv.textContent = `Congratulations! ${winner} wins!`;
+                    document.getElementById('new-game').style.display = 'block';
+                    this.gameOver = true;
+                    return true;
+                }
+                return false;
+            }
+
             isValidPosition(row, col) {
                 return row >= 0 && row < 8 && col >= 0 && col < 8;
             }
 
             handleCellClick(row, col) {
+                if (this.gameOver) return;
+
                 const piece = this.board[row][col];
 
                 // If a piece is already selected
@@ -205,6 +258,7 @@
                         this.possibleMoves = [];
                         this.isJumpInProgress = false;
                         this.currentPlayer = this.currentPlayer === 'red' ? 'black' : 'red';
+                        this.checkWinCondition();
                     } else {
                         // If clicking on another valid piece of same color during non-jump sequence
                         if (piece && piece.color === this.currentPlayer && !this.isJumpInProgress) {
@@ -250,8 +304,15 @@
             }
         }
 
-        // Start the game
-        new CheckersGame();
+        let game;
+        function startNewGame() {
+            game = new CheckersGame();
+            document.getElementById('game-over').textContent = '';
+            document.getElementById('new-game').style.display = 'none';
+        }
+
+        // Start initial game
+        startNewGame();
     </script>
 </body>
 </html>
