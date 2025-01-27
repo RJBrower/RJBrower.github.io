@@ -4,10 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome!!!</title>
+    <script>
+        function loadTextFile() {
+            fetch('chat_log.txt')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('content').innerText = data;
+                })
+                .catch(error => console.error('Error loading the text file:', error));
+        }
+    </script>
 </head>
 <body>
     <h1>Success</h1>
     <p><a href="checkers.html">Checkers</a></p>
     <p><a href="adventure.html">Adventure</a></p>
+    <br>
+    <h1>Log File</h1>
+    <div id="content"></div>
 </body>
 </html>
