@@ -4,25 +4,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adventure Direction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f0f4f8;
+        }
+        h1 {
+            color: #2c5282;
+            margin-bottom: 30px;
+        }
+        button {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #2b6cb0;
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 18px;
+            min-height: 60px;
+        }
+        canvas {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            max-width: 100%;
+        }
+    </style>
     <script>
+        let currentX = 0;
+        let currentY = 0;
+        let currentHeading = 0; // 0 degrees = facing up, increases clockwise
+        let pathHistory = [{x: 0, y: 0, heading: 0}];
+        let minX = 0, maxX = 0, minY = 0, maxY = 0;
+        
+        function drawArrow(ctx, x, y, heading, color) {
+            const size = 15;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(heading * Math.PI / 180);
+            
+            // Draw arrow
+            ctx.beginPath();
+            ctx.moveTo(0, -size);
+            ctx.lineTo(size/2, size/2);
+            ctx.lineTo(0, size/4);
+            ctx.lineTo(-size/2, size/2);
+            ctx.closePath();
+            
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        function updateCanvasSize() {
+            const canvas = document.getElementById('pathCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Add padding to boundaries
+            const padding = 50;
+            const width = Math.max(Math.abs(maxX - minX) + padding * 2, 200);
+            const height = Math.max(Math.abs(maxY - minY) + padding * 2, 200);
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Transform all coordinates to fit the new canvas size
+            const offsetX = -minX + padding;
+            const offsetY = -minY + padding;
+            
+            // Clear and redraw everything
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw all path segments
+            ctx.beginPath();
+            ctx.moveTo(pathHistory[0].x + offsetX, pathHistory[0].y + offsetY);
+            
+            for (let i = 1; i < pathHistory.length; i++) {
+                ctx.lineTo(pathHistory[i].x + offsetX, pathHistory[i].y + offsetY);
+            }
+            
+            ctx.strokeStyle = '#4299e1';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw points and arrows for each position
+            pathHistory.forEach((point, index) => {
+                if (index === pathHistory.length - 1) {
+                    // Current position - draw arrow
+                    drawArrow(ctx, point.x + offsetX, point.y + offsetY, point.heading, '#2b6cb0');
+                } else {
+                    // Past position - draw dot
+                    ctx.beginPath();
+                    ctx.arc(point.x + offsetX, point.y + offsetY, 3, 0, 2 * Math.PI);
+                    ctx.fillStyle = index === 0 ? '#4299e1' : '#90cdf4';
+                    ctx.fill();
+                }
+            });
+        }
+
+        function resetPath() {
+            currentX = 0;
+            currentY = 0;
+            currentHeading = 0;
+            pathHistory = [{x: 0, y: 0, heading: 0}];
+            minX = 0;
+            maxX = 0;
+            minY = 0;
+            maxY = 0;
+            updateCanvasSize();
+        }
+
         function generateAdventure() {
             // Generate a random distance between 0.1 and 5 miles
             var distance = (Math.random() * (5 - 0.1) + 0.1).toFixed(1);
             
-            // Array of directions
-            var directions = ["North", "South", "East", "West", "Straight", "Backwards (Make a U-turn, ASAP)","Left", "Right"];
+            // Array of directions relative to current heading
+            var directions = ["Forward", "Turn Right", "Turn Left", "Turn Around"];
             
             // Generate a random direction
             var direction = directions[Math.floor(Math.random() * directions.length)];
             
-            // Display the result
-            document.getElementById("result").innerHTML = "Random Distance: " + distance + " miles<br>Direction: " + direction;
+            // Calculate new position based on direction
+            // Scale distance (1 mile = 30 pixels)
+            const pixelDistance = distance * 30;
+            
+            // First update heading based on direction
+            switch(direction) {
+                case "Turn Around":
+                    currentHeading = (currentHeading + 180) % 360;
+                    break;
+                case "Turn Right":
+                    currentHeading = (currentHeading + 90) % 360;
+                    break;
+                case "Turn Left":
+                    currentHeading = (currentHeading - 90 + 360) % 360;
+                    break;
+                // Forward keeps same heading
+            }
+            
+            // Then always move forward by the distance
+            const angleRad = currentHeading * Math.PI / 180;
+            currentX += pixelDistance * Math.sin(angleRad);
+            currentY -= pixelDistance * Math.cos(angleRad);
+            
+            // Update boundaries
+            minX = Math.min(minX, currentX);
+            maxX = Math.max(maxX, currentX);
+            minY = Math.min(minY, currentY);
+            maxY = Math.max(maxY, currentY);
+            
+            // Store the new position and heading in history
+            pathHistory.push({x: currentX, y: currentY, heading: currentHeading});
+            
+            // Update canvas and redraw
+            updateCanvasSize();
+            
+            // Display the result with some animation
+            const result = document.getElementById("result");
+            result.style.opacity = "0";
+            
+            setTimeout(() => {
+                result.innerHTML = `<strong>Distance:</strong> ${distance} miles<br><strong>Direction:</strong> ${direction}`;
+                result.style.opacity = "1";
+            }, 200);
+        }
+
+        // Initialize canvas when page loads
+        window.onload = function() {
+            updateCanvasSize();
         }
     </script>
 </head>
 <body>
     <h1>Choose a Direction for Your Adventure!</h1>
     <button onclick="generateAdventure()">Generate Adventure</button>
+    <button onclick="resetPath()">Reset Path</button>
     <p id="result"></p>
+    <canvas id="pathCanvas" width="200" height="200"></canvas>
 </body>
 </html>
