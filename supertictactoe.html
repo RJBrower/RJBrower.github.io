@@ -27,6 +27,9 @@
             border: 1px solid #000;
             cursor: pointer;
         }
+        .highlight {
+            background-color: yellow;
+        }
         .controls {
             margin-top: 20px;
         }
@@ -81,8 +84,9 @@
             board[index] = currentPlayer;
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             createBoard();
-            if (checkWinner()) {
-                alert(`${board[index]} wins!`);
+            const winner = checkWinner();
+            if (winner) {
+                highlightWinner(winner);
             }
         }
 
@@ -100,9 +104,19 @@
                 [0, 3, 12, 15]
             ];
 
-            return winningCombinations.some(combination => 
-                combination.every(index => board[index] && board[index] === board[combination[0]])
-            );
+            for (const combination of winningCombinations) {
+                if (combination.every(index => board[index] && board[index] === board[combination[0]])) {
+                    return combination;
+                }
+            }
+            return null;
+        }
+
+        function highlightWinner(winningCombination) {
+            winningCombination.forEach(index => {
+                const cellElement = boardElement.children[index];
+                cellElement.classList.add('highlight');
+            });
         }
 
         function resetGame() {
