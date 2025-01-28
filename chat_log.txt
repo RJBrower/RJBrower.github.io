@@ -21,3 +21,12 @@ Adventure
 - Get rid of compass directions and make it resize canvas as need to show the whole travel path.
 - That's great. Now make it so the user is an arrow that has a specific heading. And make the directions relative to current heading.
 - That's awesome. It's not respecting the turn exactly how I'd like. For example, if the direction turns right and the distance is 2.0 miles, then it should turn right and go forward that distance on the canvas.
+
+Super Tic-Tac-Toe
+# copilot (done from my phone, including commits)
+- Do you know what super tik-tak-toe is?
+- How about a 16 square variant?
+- Add the option to win with a square or all four corners.
+- Write this into a JavaScript based game embedded in HTML. Add in a reset button and buttons in each square for means of choosing.
+- Add a button so show/hide the rules (hidden by default)
+- Instead of an alert, just highlight the winning combination(s).
