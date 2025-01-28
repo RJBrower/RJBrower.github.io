@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>16-Square Tic-Tac-Toe</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            gap: 5px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        .rules {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>16-Square Tic-Tac-Toe</h1>
+    <div class="board" id="board"></div>
+    <div class="controls">
+        <button onclick="resetGame()">Reset Game</button>
+        <button onclick="toggleRules()">Show/Hide Rules</button>
+    </div>
+    <div class="rules" id="rules">
+        <h2>Rules:</h2>
+        <ul>
+            <li>The game is played on a 4x4 grid, making a total of 16 squares.</li>
+            <li>Winning Conditions:
+                <ul>
+                    <li>Get four of your marks (X or O) in a row, either horizontally, vertically, or diagonally.</li>
+                    <li>Form a 2x2 square with your marks.</li>
+                    <li>Occupy all four corners of the grid with your marks.</li>
+                </ul>
+            </li>
+            <li>Players take turns placing their marks in an empty square. The first player to meet any of the winning conditions wins the game.</li>
+        </ul>
+    </div>
+
+    <script>
+        const boardElement = document.getElementById('board');
+        const rulesElement = document.getElementById('rules');
+        let board = Array(16).fill(null);
+        let currentPlayer = 'X';
+
+        function createBoard() {
+            boardElement.innerHTML = '';
+            board.forEach((cell, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                cellElement.addEventListener('click', () => makeMove(index));
+                cellElement.textContent = cell;
+                boardElement.appendChild(cellElement);
+            });
+        }
+
+        function makeMove(index) {
+            if (board[index] || checkWinner()) return;
+            board[index] = currentPlayer;
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            createBoard();
+            if (checkWinner()) {
+                alert(`${board[index]} wins!`);
+            }
+        }
+
+        function checkWinner() {
+            const winningCombinations = [
+                // Horizontal
+                [0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15],
+                // Vertical
+                [0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15],
+                // Diagonal
+                [0, 5, 10, 15], [3, 6, 9, 12],
+                // 2x2 Squares
+                [0, 1, 4, 5], [1, 2, 5, 6], [2, 3, 6, 7], [4, 5, 8, 9], [5, 6, 9, 10], [6, 7, 10, 11], [8, 9, 12, 13], [9, 10, 13, 14], [10, 11, 14, 15],
+                // Four Corners
+                [0, 3, 12, 15]
+            ];
+
+            return winningCombinations.some(combination => 
+                combination.every(index => board[index] && board[index] === board[combination[0]])
+            );
+        }
+
+        function resetGame() {
+            board = Array(16).fill(null);
+            currentPlayer = 'X';
+            createBoard();
+        }
+
+        function toggleRules() {
+            rulesElement.style.display = rulesElement.style.display === 'none' ? 'block' : 'none';
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
