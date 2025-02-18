@@ -4,6 +4,7 @@ home
 #I created this
 #Copilot
 - give me a simple div in an html page that just shows the contents of a relative txt file
+- I noticed that some websites, when you save and use a link on the home screen, will open up full screen like an app. How does that work? How could I incorporate that into my webpage?
 
 Checkers
 #claude
