@@ -2,12 +2,28 @@
 <html>
 	<head>
 		<title>COWs - Word Search</title>
+		<style type="text/css">
+			/* Apply styles only if the table has the "solve" class */
+			/* Base classes */
+			table.solve .highlight-horizontal { background-color: red; }
+			table.solve .highlight-vertical { background-color: lightblue; }
+			table.solve .highlight-diagonal { background-color: yellow; }
+			/* Overlap classes */
+			table.solve .highlight-horizontal.highlight-vertical { background-color: slateblue; }
+			table.solve .highlight-horizontal.highlight-diagonal { background-color: orange; }
+			table.solve .highlight-vertical.highlight-diagonal { background-color: lightgreen; }
+			/* All three directions */
+			table.solve .highlight-horizontal.highlight-vertical.highlight-diagonal { background-color: grey; }
+
+		</style>
 	</head>
 	<body>
 		<div id="main">
 			<p>COW COW COW</p>
 			<p id="options">Size:<input id="rows" size=2 type="text" value="36">x<input id="columns" size=2 type="text" value=37>
-			<button onclick="create()">Create</button><br><br><button onclick='document.getElementById("options").innerHTML = ""'>Hide for printing</button></p>			
+			<button onclick="create()">Create</button><br><br><button onclick='document.getElementById("options").innerHTML = ""'>Hide for printing</button></p>
+			<button onclick='document.getElementById("puzzle").classList.add("solve")'>Show Solution</button>
+			<button onclick='document.getElementById("puzzle").classList.remove("solve")'>Hide Solution</button>
 			<p id="stats"></p>
 			<div id="output"></div>
 			<script>
@@ -21,11 +37,11 @@
 						puzzle[r] = (new Array(columns)).fill();
 					}
 					
-					var tableHTML = "<table>"
+					var tableHTML = '<table id="puzzle">';
 					for(r in puzzle){
 						tableHTML += "<tr>";
 						for(c in puzzle[r]){
-							tableHTML += "<td>";
+							tableHTML += "<td id='"+r+'_'+c+"''>";
 							puzzle[r][c] = cow[Math.ceil(Math.random()*3)-1];
 							tableHTML += puzzle[r][c];
 							tableHTML += "</td>";
@@ -59,6 +75,9 @@
 									if(puzzle[r][c]+puzzle[r-1][c]+puzzle[r-2][c]=="COW"){
 										count++;
 										countUp++;
+										document.getElementById(r+'_'+c).classList.add("highlight-vertical");
+										document.getElementById((r-1)+'_'+c).classList.add("highlight-vertical");
+										document.getElementById((r-2)+'_'+c).classList.add("highlight-vertical");
 									};
 								};
 								//down
@@ -66,6 +85,9 @@
 									if(puzzle[r][c]+puzzle[r+1][c]+puzzle[r+2][c]=="COW"){
 										count++;
 										countDown++;
+										document.getElementById(r+'_'+c).classList.add("highlight-vertical");
+										document.getElementById((r+1)+'_'+c).classList.add("highlight-vertical");
+										document.getElementById((r+2)+'_'+c).classList.add("highlight-vertical");
 									};
 								};
 								//left
@@ -73,6 +95,9 @@
 									if(puzzle[r][c]+puzzle[r][c-1]+puzzle[r][c-2]=="COW"){
 										count++;
 										countLeft++;
+										document.getElementById(r+'_'+c).classList.add("highlight-horizontal");
+										document.getElementById(r+'_'+(c-1)).classList.add("highlight-horizontal");
+										document.getElementById(r+'_'+(c-2)).classList.add("highlight-horizontal");
 									};
 								};
 								//right
@@ -80,6 +105,9 @@
 									if(puzzle[r][c]+puzzle[r][c+1]+puzzle[r][c+2]=="COW"){
 										count++;
 										countRight++;
+										document.getElementById(r+'_'+c).classList.add("highlight-horizontal");
+										document.getElementById(r+'_'+(c+1)).classList.add("highlight-horizontal");
+										document.getElementById(r+'_'+(c+2)).classList.add("highlight-horizontal");
 									};
 								};
 								//up-left
@@ -87,6 +115,9 @@
 									if(puzzle[r][c]+puzzle[r-1][c-1]+puzzle[r-2][c-2]=="COW"){
 										count++;
 										countUpLeft++;
+										document.getElementById(r+'_'+c).classList.add("highlight-diagonal");
+										document.getElementById((r-1)+'_'+(c-1)).classList.add("highlight-diagonal");
+										document.getElementById((r-2)+'_'+(c-2)).classList.add("highlight-diagonal");
 									};
 								}
 								//up-right
@@ -94,6 +125,9 @@
 									if(puzzle[r][c]+puzzle[r-1][c+1]+puzzle[r-2][c+2]=="COW"){
 										count++;
 										countUpRight++;
+										document.getElementById(r+'_'+c).classList.add("highlight-diagonal");
+										document.getElementById((r-1)+'_'+(c+1)).classList.add("highlight-diagonal");
+										document.getElementById((r-2)+'_'+(c+2)).classList.add("highlight-diagonal");
 									};
 								}
 								//down-left
@@ -101,6 +135,9 @@
 									if(puzzle[r][c]+puzzle[r+1][c-1]+puzzle[r+2][c-2]=="COW"){
 										count++;
 										countDownLeft++;
+										document.getElementById(r+'_'+c).classList.add("highlight-diagonal");
+										document.getElementById((r+1)+'_'+(c-1)).classList.add("highlight-diagonal");
+										document.getElementById((r+2)+'_'+(c-2)).classList.add("highlight-diagonal");
 									};
 								};
 								//down-right
@@ -108,6 +145,9 @@
 									if(puzzle[r][c]+puzzle[r+1][c+1]+puzzle[r+2][c+2]=="COW"){
 										count++;
 										countDownRight++;
+										document.getElementById(r+'_'+c).classList.add("highlight-diagonal");
+										document.getElementById((r+1)+'_'+(c+1)).classList.add("highlight-diagonal");
+										document.getElementById((r+2)+'_'+(c+2)).classList.add("highlight-diagonal");
 									};
 								};								
 							};
