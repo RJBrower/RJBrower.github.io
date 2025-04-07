@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>COWs - Word Search</title>
+	</head>
+	<body>
+		<div id="main">
+			<p>COW COW COW</p>
+			<p id="options">Size:<input id="rows" size=2 type="text" value="36">x<input id="columns" size=2 type="text" value=37>
+			<button onclick="create()">Create</button><br><br><button onclick='document.getElementById("options").innerHTML = ""'>Hide for printing</button></p>			
+			<p id="stats"></p>
+			<div id="output"></div>
+			<script>
+				function create() {
+					var cow = ["C","O","W"]
+					var rows = parseInt(document.getElementById("rows").value);
+					var columns = parseInt(document.getElementById("columns").value);
+					
+					var puzzle = (new Array(rows)).fill();
+					for (r in puzzle){
+						puzzle[r] = (new Array(columns)).fill();
+					}
+					
+					var tableHTML = "<table>"
+					for(r in puzzle){
+						tableHTML += "<tr>";
+						for(c in puzzle[r]){
+							tableHTML += "<td>";
+							puzzle[r][c] = cow[Math.ceil(Math.random()*3)-1];
+							tableHTML += puzzle[r][c];
+							tableHTML += "</td>";
+						}
+						tableHTML += "</tr>";
+					};
+					tableHTML += "</table>";
+					
+					document.getElementById("output").innerHTML = tableHTML;
+					
+					var count = 0;
+					var countUp = 0;
+					var countDown = 0;
+					var countLeft = 0;
+					var countRight = 0;
+					var countUpLeft = 0;
+					var countUpRight = 0;
+					var countDownLeft = 0;
+					var countDownRight = 0;
+					
+					for(r in puzzle){
+						r = parseInt(r);
+						for(c in puzzle[r]){
+							c = parseInt(c)
+							// find "C"
+							if (puzzle[r][c] == cow[0]){
+								//count++;
+								//direction of "COW" from "C"
+								//up
+								if(r>1){
+									if(puzzle[r][c]+puzzle[r-1][c]+puzzle[r-2][c]=="COW"){
+										count++;
+										countUp++;
+									};
+								};
+								//down
+								if(r<(rows-2)){
+									if(puzzle[r][c]+puzzle[r+1][c]+puzzle[r+2][c]=="COW"){
+										count++;
+										countDown++;
+									};
+								};
+								//left
+								if(c>1){
+									if(puzzle[r][c]+puzzle[r][c-1]+puzzle[r][c-2]=="COW"){
+										count++;
+										countLeft++;
+									};
+								};
+								//right
+								if(c<(columns-2)){
+									if(puzzle[r][c]+puzzle[r][c+1]+puzzle[r][c+2]=="COW"){
+										count++;
+										countRight++;
+									};
+								};
+								//up-left
+								if (r>1 && c>1){
+									if(puzzle[r][c]+puzzle[r-1][c-1]+puzzle[r-2][c-2]=="COW"){
+										count++;
+										countUpLeft++;
+									};
+								}
+								//up-right
+								if (r>1 && c<(columns-2)){
+									if(puzzle[r][c]+puzzle[r-1][c+1]+puzzle[r-2][c+2]=="COW"){
+										count++;
+										countUpRight++;
+									};
+								}
+								//down-left
+								if(r<(rows-2) && c>1){
+									if(puzzle[r][c]+puzzle[r+1][c-1]+puzzle[r+2][c-2]=="COW"){
+										count++;
+										countDownLeft++;
+									};
+								};
+								//down-right
+								if(r<(rows-2) && c<(columns-2)){
+									if(puzzle[r][c]+puzzle[r+1][c+1]+puzzle[r+2][c+2]=="COW"){
+										count++;
+										countDownRight++;
+									};
+								};								
+							};
+						};
+					};
+					document.getElementById("stats").innerHTML = ("").concat(
+						"<p>",rows," by ",columns," | ",
+						"Total:",count,"<br>",
+						"Up:",countUp," ",
+						"Down:",countDown," ",
+						"Left:",countLeft," ",
+						"Right:",countRight," ",
+						"Up-Left:",countUpLeft," ",
+						"Up-Right:",countUpRight," ",
+						"Down-Left:",countDownLeft," ",
+						"Down-Right:",countDownRight,"</p>"
+					);
+				};
+			</script>
+		</div>
+	</body>
+</html>
