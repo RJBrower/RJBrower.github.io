@@ -70,15 +70,80 @@
         .new-game-btn:hover {
             background-color: #45a049;
         }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .game-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            padding: 8px 15px;
+            font-size: 14px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background-color: #45a049;
+        }
+        
+        .btn.active {
+            background-color: #2E7D32;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        
+        .btn.disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .ai-thinking {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <p><a href="/">HOME</a></p>
     <h1>NOT Simple, AI Checkers</h1>
+    
+    <div class="controls">
+        <div class="game-options">
+            <button id="human-vs-human" class="btn active" onclick="setGameMode('human')">Human vs Human</button>
+            <button id="human-vs-ai" class="btn" onclick="setGameMode('ai')">Play Against AI</button>
+            <button id="suggest-move" class="btn" onclick="suggestMove()">Suggest Move</button>
+        </div>
+        <div id="ai-difficulty" style="display: none;">
+            <span>AI Difficulty:</span>
+            <button class="btn active" onclick="setAiDifficulty('easy')">Easy</button>
+            <button class="btn" onclick="setAiDifficulty('medium')">Medium</button>
+            <button class="btn" onclick="setAiDifficulty('hard')">Hard</button>
+        </div>
+        <div id="ai-thinking" class="ai-thinking" style="display: none;">AI is thinking...</div>
+    </div>
+    
     <div id="turn-indicator"></div>
     <div id="game-over" class="game-over"></div>
     <button id="new-game" class="new-game-btn" onclick="startNewGame()">Start New Game</button>
     <div class="board" id="board"></div>
+
+    <!-- Add this to the controls section near line 118 -->
+    <div id="move-explanation" style="margin-top: 15px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; display: none;">
+        <h3>Move Analysis</h3>
+        <p id="explanation-text"></p>
+    </div>
 
     <script>
         class CheckersGame {
@@ -89,6 +154,9 @@
                 this.possibleMoves = [];
                 this.isJumpInProgress = false;
                 this.gameOver = false;
+                this.gameMode = 'human'; // 'human' or 'ai'
+                this.aiDifficulty = 'easy'; // 'easy', 'medium', or 'hard'
+                this.aiColor = 'black'; // AI plays as black
                 this.initializeBoard();
                 this.renderBoard();
                 this.updateTurnIndicator();
@@ -236,6 +304,7 @@
 
             handleCellClick(row, col) {
                 if (this.gameOver) return;
+                if (this.gameMode === 'ai' && this.currentPlayer === this.aiColor) return;
 
                 const piece = this.board[row][col];
 
@@ -260,7 +329,10 @@
                         this.possibleMoves = [];
                         this.isJumpInProgress = false;
                         this.currentPlayer = this.currentPlayer === 'red' ? 'black' : 'red';
-                        this.checkWinCondition();
+                        
+                        if (!this.checkWinCondition() && this.gameMode === 'ai' && this.currentPlayer === this.aiColor) {
+                            this.makeAiMove();
+                        }
                     } else {
                         // If clicking on another valid piece of same color during non-jump sequence
                         if (piece && piece.color === this.currentPlayer && !this.isJumpInProgress) {
@@ -304,6 +376,234 @@
             shouldBecomeKing(row, color) {
                 return (color === 'red' && row === 0) || (color === 'black' && row === 7);
             }
+
+            // New methods for AI functionality
+            async makeAiMove() {
+                document.getElementById('ai-thinking').style.display = 'block';
+                
+                // Small delay to show the AI is "thinking"
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                const move = this.findBestMove();
+                if (move) {
+                    // Select the piece
+                    this.selectedPiece = { row: move.fromRow, col: move.fromCol };
+                    this.possibleMoves = this.getPossibleMoves(move.fromRow, move.fromCol, 
+                                         this.hasJumpMoves(this.currentPlayer));
+                    
+                    // Make the move
+                    const moveObj = { row: move.toRow, col: move.toCol, isCapture: move.isCapture };
+                    this.makeMove(moveObj);
+                    
+                    // Handle additional jumps if available
+                    let additionalJumps = [];
+                    if (move.isCapture) {
+                        additionalJumps = this.getPossibleMoves(move.toRow, move.toCol, true);
+                    }
+                    
+                    if (additionalJumps.length > 0) {
+                        // If we have additional jumps, continue jumping
+                        this.selectedPiece = { row: move.toRow, col: move.toCol };
+                        this.possibleMoves = additionalJumps;
+                        this.isJumpInProgress = true;
+                        this.renderBoard();
+                        this.updateTurnIndicator();
+                        
+                        // Call makeAiMove recursively to continue the jump sequence
+                        document.getElementById('ai-thinking').style.display = 'none';
+                        setTimeout(() => this.makeAiMove(), 500);
+                        return;
+                    }
+                    
+                    // End turn
+                    this.selectedPiece = null;
+                    this.possibleMoves = [];
+                    this.isJumpInProgress = false;
+                    this.currentPlayer = this.currentPlayer === 'red' ? 'black' : 'red';
+                    this.checkWinCondition();
+                    
+                    // Show explanation for AI move
+                    const explanation = this.explainMove(move);
+                    document.getElementById('explanation-text').textContent = "AI's move: " + explanation;
+                    document.getElementById('move-explanation').style.display = 'block';
+                }
+                
+                document.getElementById('ai-thinking').style.display = 'none';
+                this.renderBoard();
+                this.updateTurnIndicator();
+            }
+
+            findBestMove() {
+                // Get all available pieces for the current player
+                const availablePieces = [];
+                
+                // Check if there are mandatory jumps
+                const hasJumps = this.hasJumpMoves(this.currentPlayer);
+                
+                // Collect all possible moves
+                const allMoves = [];
+                
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (this.board[row][col]?.color === this.currentPlayer) {
+                            const moves = this.getPossibleMoves(row, col, hasJumps);
+                            moves.forEach(move => {
+                                allMoves.push({
+                                    fromRow: row,
+                                    fromCol: col,
+                                    toRow: move.row,
+                                    toCol: move.col,
+                                    isCapture: move.isCapture,
+                                    score: this.evaluateMove(row, col, move)
+                                });
+                            });
+                        }
+                    }
+                }
+                
+                if (allMoves.length === 0) {
+                    return null;
+                }
+                
+                // For easy difficulty: randomly choose from available moves
+                if (this.aiDifficulty === 'easy') {
+                    // Slight preference for captures, but still random
+                    const jumpMoves = allMoves.filter(move => move.isCapture);
+                    const movesToConsider = jumpMoves.length > 0 ? jumpMoves : allMoves;
+                    return movesToConsider[Math.floor(Math.random() * movesToConsider.length)];
+                }
+                
+                // For medium and hard: choose the best move based on score
+                allMoves.sort((a, b) => b.score - a.score);
+                
+                // Medium has some randomness
+                if (this.aiDifficulty === 'medium') {
+                    // Take one of the top 3 moves (or fewer if less available)
+                    const topMoves = allMoves.slice(0, Math.min(3, allMoves.length));
+                    return topMoves[Math.floor(Math.random() * topMoves.length)];
+                }
+                
+                // Hard always picks the best move
+                return allMoves[0];
+            }
+
+            evaluateMove(fromRow, fromCol, move) {
+                let score = 0;
+                
+                // Captures are highly valuable
+                if (move.isCapture) {
+                    score += 20;
+                }
+                
+                const piece = this.board[fromRow][fromCol];
+                
+                // Kings are more valuable
+                if (piece.isKing) {
+                    score += 5;
+                }
+                
+                // Will become a king after this move
+                if (!piece.isKing && this.shouldBecomeKing(move.row, piece.color)) {
+                    score += 15;
+                }
+                
+                // Advancing toward king row for non-kings
+                if (!piece.isKing) {
+                    const advancement = piece.color === 'black' ? 
+                        move.row - fromRow : 
+                        fromRow - move.row;
+                    score += advancement;
+                }
+                
+                // Avoid edges when possible
+                if (move.col === 0 || move.col === 7) {
+                    score -= 2;
+                }
+                
+                // Add some randomness for variety
+                score += Math.random() * 2;
+                
+                return score;
+            }
+            
+            // Method to suggest a move to the player
+            suggestMove() {
+                if (this.gameOver || this.currentPlayer !== 'red') return null;
+                
+                // Temporarily set AI difficulty to "hard" for good suggestions
+                const savedDifficulty = this.aiDifficulty;
+                this.aiDifficulty = 'hard';
+                
+                const suggestedMove = this.findBestMove();
+                
+                // Restore original difficulty
+                this.aiDifficulty = savedDifficulty;
+                
+                return suggestedMove;
+            }
+            
+            explainMove(move) {
+                if (!move) return "No valid moves available.";
+                
+                let explanation = "";
+                const piece = this.board[move.fromRow][move.fromCol];
+                
+                // Basic move information
+                explanation += `Move ${piece.color} piece from [${move.fromRow}, ${move.fromCol}] to [${move.toRow}, ${move.toCol}]. `;
+                
+                // Why this move is good
+                if (move.isCapture) {
+                    explanation += "This captures an opponent's piece. ";
+                }
+                
+                if (!piece.isKing && this.shouldBecomeKing(move.toRow, piece.color)) {
+                    explanation += "This move creates a king! ";
+                }
+                
+                if (!piece.isKing) {
+                    explanation += "This advances toward the king row. ";
+                }
+                
+                // Safety considerations
+                const isEdgeMove = move.toCol === 0 || move.toCol === 7;
+                if (isEdgeMove) {
+                    explanation += "Note: This moves to the edge of the board which could limit future movement options. ";
+                }
+                
+                // Capture opportunities
+                let leadsToMoreCaptures = false;
+                if (move.isCapture) {
+                    const boardCopy = JSON.parse(JSON.stringify(this.board));
+                    boardCopy[move.toRow][move.toCol] = boardCopy[move.fromRow][move.fromCol];
+                    boardCopy[move.fromRow][move.fromCol] = null;
+                    boardCopy[(move.fromRow + move.toRow) / 2][(move.fromCol + move.toCol) / 2] = null;
+                    
+                    // Check if there are more captures possible after this one
+                    const directions = piece.isKing ? [-1, 1] : piece.color === 'red' ? [-1] : [1];
+                    
+                    directions.forEach(dRow => {
+                        [-1, 1].forEach(dCol => {
+                            const jumpRow = move.toRow + dRow * 2;
+                            const jumpCol = move.toCol + dCol * 2;
+                            const midRow = move.toRow + dRow;
+                            const midCol = move.toCol + dCol;
+                            
+                            if (this.isValidPosition(jumpRow, jumpCol) && 
+                                !boardCopy[jumpRow][jumpCol] && 
+                                boardCopy[midRow][midCol]?.color !== piece.color &&
+                                boardCopy[midRow][midCol] !== null) {
+                                leadsToMoreCaptures = true;
+                            }
+                        });
+                    });
+                }
+                
+                if (leadsToMoreCaptures) {
+                    explanation += "This leads to multiple captures in sequence! ";
+                }
+                
+                return explanation;
+            }
         }
 
         let game;
@@ -311,6 +611,79 @@
             game = new CheckersGame();
             document.getElementById('game-over').textContent = '';
             document.getElementById('new-game').style.display = 'none';
+            
+            // Set correct mode buttons
+            updateModeButtons();
+        }
+        
+        function setGameMode(mode) {
+            game.gameMode = mode;
+            
+            // Show/hide AI difficulty settings
+            document.getElementById('ai-difficulty').style.display = 
+                mode === 'ai' ? 'block' : 'none';
+                
+            // Update button styles
+            document.getElementById('human-vs-human').className = 
+                'btn' + (mode === 'human' ? ' active' : '');
+            document.getElementById('human-vs-ai').className = 
+                'btn' + (mode === 'ai' ? ' active' : '');
+                
+            // If changing to AI mode and it's already AI's turn, make AI move
+            if (mode === 'ai' && game.currentPlayer === game.aiColor && !game.gameOver) {
+                game.makeAiMove();
+            }
+            
+            updateModeButtons();
+        }
+        
+        function setAiDifficulty(difficulty) {
+            game.aiDifficulty = difficulty;
+            
+            // Update button styles
+            const buttons = document.getElementById('ai-difficulty').getElementsByTagName('button');
+            for (let button of buttons) {
+                button.classList.remove('active');
+                if (button.textContent.toLowerCase() === difficulty) {
+                    button.classList.add('active');
+                }
+            }
+        }
+        
+        function suggestMove() {
+            if (game.gameOver || game.currentPlayer !== 'red') return;
+            
+            const move = game.suggestMove();
+            if (move) {
+                // Clear any previous selections
+                game.selectedPiece = null;
+                game.possibleMoves = [];
+                
+                // Highlight the suggested piece and its move
+                game.selectedPiece = { row: move.fromRow, col: move.fromCol };
+                game.possibleMoves = [{ 
+                    row: move.toRow, 
+                    col: move.toCol, 
+                    isCapture: move.isCapture 
+                }];
+                
+                // Show explanation
+                const explanation = game.explainMove(move);
+                document.getElementById('explanation-text').textContent = explanation;
+                document.getElementById('move-explanation').style.display = 'block';
+                
+                game.renderBoard();
+            }
+        }
+        
+        function updateModeButtons() {
+            // Enable/disable the suggest move button based on game state
+            const suggestBtn = document.getElementById('suggest-move');
+            if (game.gameOver || (game.gameMode === 'ai' && game.currentPlayer === game.aiColor)) {
+                suggestBtn.classList.add('disabled');
+            } else {
+                suggestBtn.classList.remove('disabled');
+            }
         }
 
         // Start initial game

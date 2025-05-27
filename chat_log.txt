@@ -31,3 +31,41 @@ Super Tic-Tac-Toe
 - Write this into a JavaScript based game embedded in HTML. Add in a reset button and buttons in each square for means of choosing.
 - Add a button so show/hide the rules (hidden by default)
 - Instead of an alert, just highlight the winning combination(s).
+
+
+AI Checkers
+# COPIED FROM Checkers
+# Claude 3.7 SOnnet
+- add an option for the player to add in AI assist
+
+```
+Key Features Added:
+Game Mode Selection:
+
+Human vs Human (original gameplay)
+Human vs AI (play against the computer)
+AI Difficulty Levels:
+
+Easy: Makes random moves with slight preference for captures
+Medium: Makes decent moves with some randomness
+Hard: Always makes the best calculated move
+Move Suggestion:
+
+The "Suggest Move" button highlights the recommended move for the player
+AI Decision-Making Logic:
+
+Evaluates moves based on captures, king creation, advancement, and board position
+Handles multi-jump sequences correctly
+Shows a "thinking" indicator while the AI calculates its move
+The AI uses a simple heuristic evaluation function that considers:
+
+Captures (highest priority)
+King creation opportunities
+Board positioning
+Advancement towards king row
+This implementation provides a solid foundation that you can further enhance with more sophisticated AI algorithms if needed.
+```
+
+- We'd like this to connect dynamically to an AI for assistance during the game, both for playing against and for suggestion to help learn and get better?
+ ``` These changes will provide educational feedback to help players understand what makes a move good or bad, which will help them improve their checkers strategy over time. ```
+ 
