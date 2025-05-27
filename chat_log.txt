@@ -67,5 +67,6 @@ This implementation provides a solid foundation that you can further enhance wit
 ```
 
 - We'd like this to connect dynamically to an AI for assistance during the game, both for playing against and for suggestion to help learn and get better?
- ``` These changes will provide educational feedback to help players understand what makes a move good or bad, which will help them improve their checkers strategy over time. ```
- 
+``` These changes will provide educational feedback to help players understand what makes a move good or bad, which will help them improve their checkers strategy over time. ```
+
+- There is an issue with the makeAiMove command. The Explination is trying to be done for multiple scenarios, for suggestions and for explaining what the AI is doing. Suggestions are BEFORE the player moved, which is how the explain is set up, but the AI move isn;t explained until AFTER the piece is moved, which breaks the explain function.
