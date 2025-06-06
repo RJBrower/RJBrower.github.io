@@ -2,6 +2,12 @@
 <html>
 	<head>
 		<title>Bingo</title>
+        <style>
+            body.dark-mode {
+                background-color: #121212;
+                color: #f0f0f0;
+            }
+        </style>
         <!--
         <style>
     body {
@@ -77,7 +83,7 @@
 	<body>
 		<p><a href="/">&lt; HOME</a></p>
     	<div id="main">
-			<p>Bingo <button onclick="reset()">Reset</button> <button onclick='next()'>Next</button></p>
+			<p>Bingo <button onclick="reset()">Reset</button> <button onclick='next()'>Next</button> <button onclick="toggleDarkMode()">Toggle Dark Mode</button></p>
 			<div id="bingo">
                 <h1 id="current">BINGO!</h1>
                 <table>
@@ -138,6 +144,9 @@
                     }
                     
                     document.getElementById("current").innerText = num;
+                }
+                function toggleDarkMode() {
+                    document.body.classList.toggle('dark-mode');
                 }
             </script>
 		</div>
