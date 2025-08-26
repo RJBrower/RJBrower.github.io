@@ -2,154 +2,214 @@
 <html>
 	<head>
 		<title>Bingo</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <style>
-            body.dark-mode {
-                background-color: #121212;
-                color: #f0f0f0;
-            }
-        </style>
-        <!--
-        <style>
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        min-height: 100vh;
-        background-color: #f0f8ff;
-    }
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				border: 0;
+				font-family: sans-serif;
+				border-collapse: collapse;
+				touch-action: none;
+			}
+			
+			header button { width: calc(100% / 3); height: 50%; font-size: inherit; display: inline-block; border: 1px solid; color: black;}
+			
+			header { height: 10vh; font-size: 4vh; }
 
-    #main {
-        width: 90%;
-        max-width: 1200px;
-        margin-top: 20px;
-    }
+			#bingo {
+				width: 100%;
+				height: 90vh;
+			}
+			
+			#current {float: right;}
+			
+			td { width: 20vw; font-size: calc(90vh / 20); }
+			
+			input[type="checkbox"] {
+				height: calc(90vh / 17);
+				width: 10vw;
+			}
 
-    #bingo {
-        text-align: center;
-    }
+			
+			body.dark-mode {
+				background-color: black;
+				color: white;
+			}
 
-    #current {
-        font-size: 3em;
-        margin: 20px 0;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;
-    }
-
-    td {
-        border: 1px solid #ccc;
-        padding: 10px;
-        text-align: center;
-        font-size: 1.5em;
-    }
-
-    input[type="checkbox"] {
-        transform: scale(1.5);
-        margin-right: 8px;
-    }
-
-    button {
-        font-size: 1.2em;
-        padding: 10px 20px;
-        margin: 0 10px;
-        cursor: pointer;
-    }
-
-    @media (max-width: 600px) {
-        td {
-            font-size: 1em;
-            padding: 5px;
-        }
-
-        #current {
-            font-size: 2em;
-        }
-
-        button {
-            font-size: 1em;
-            padding: 8px 16px;
-        }
-    }
-        </style>
-        -->
+			td tr:first-of-type td {
+				text-align: center;
+				background-color: white;
+				color: black;
+			}
+			
+			.b-col tr:first-of-type td { color: black; background-color: lightblue; }
+			.i-col tr:first-of-type td { color: black; background-color: pink; }
+			.n-col tr:first-of-type td { color: black; background-color: lightgrey; }
+			.g-col tr:first-of-type td { color: black; background-color: lightgreen; }
+			.o-col tr:first-of-type td { color: black; background-color: yellow; }
+			.b-col input[type="checkbox"] { accent-color: lightblue; }
+			.i-col input[type="checkbox"] { accent-color: pink; }
+			.n-col input[type="checkbox"] { accent-color: lightgrey; }
+			.g-col input[type="checkbox"] { accent-color: lightgreen; }
+			.o-col input[type="checkbox"] { accent-color: yellow; }
+		</style>
 	</head>
 	<body>
-		<p><a href="/">&lt; HOME</a></p>
-    	<div id="main">
-			<p>Bingo <button onclick="reset()">Reset</button> <button onclick='next()'>Next</button> <button onclick="toggleDarkMode()">Toggle Dark Mode</button></p>
-			<div id="bingo">
-                <h1 id="current">BINGO!</h1>
-                <table>
-                    <tr>
-                        <td id="B" style="background-color: lightblue;">B</td>
-                        <td id="I" style="background-color: pink;">I</td>
-                        <td id="N" style="background-color: lightgrey;">N</td>
-                        <td id="G" style="background-color: lightgreen;">G</td>
-                        <td id="O" style="background-color: lightyellow;">O</td>
-                    </tr>
-                    <tr><td><input type="checkbox" id= "1" >1</td><td><input type="checkbox" id="16">16</td><td><input type="checkbox" id="31">31</td><td><input type="checkbox" id="46">46</td><td><input type="checkbox" id="61">61</td></tr>
-                    <tr><td><input type="checkbox" id= "2" >2</td><td><input type="checkbox" id="17">17</td><td><input type="checkbox" id="32">32</td><td><input type="checkbox" id="47">47</td><td><input type="checkbox" id="62">62</td></tr>
-                    <tr><td><input type="checkbox" id= "3" >3</td><td><input type="checkbox" id="18">18</td><td><input type="checkbox" id="33">33</td><td><input type="checkbox" id="48">48</td><td><input type="checkbox" id="63">63</td></tr>
-                    <tr><td><input type="checkbox" id= "4" >4</td><td><input type="checkbox" id="19">19</td><td><input type="checkbox" id="34">34</td><td><input type="checkbox" id="49">49</td><td><input type="checkbox" id="64">64</td></tr>
-                    <tr><td><input type="checkbox" id= "5" >5</td><td><input type="checkbox" id="20">20</td><td><input type="checkbox" id="35">35</td><td><input type="checkbox" id="50">50</td><td><input type="checkbox" id="65">65</td></tr>
-                    <tr><td><input type="checkbox" id= "6" >6</td><td><input type="checkbox" id="21">21</td><td><input type="checkbox" id="36">36</td><td><input type="checkbox" id="51">51</td><td><input type="checkbox" id="66">66</td></tr>
-                    <tr><td><input type="checkbox" id= "7" >7</td><td><input type="checkbox" id="22">22</td><td><input type="checkbox" id="37">37</td><td><input type="checkbox" id="52">52</td><td><input type="checkbox" id="67">67</td></tr>
-                    <tr><td><input type="checkbox" id= "8" >8</td><td><input type="checkbox" id="23">23</td><td><input type="checkbox" id="38">38</td><td><input type="checkbox" id="53">53</td><td><input type="checkbox" id="68">68</td></tr>
-                    <tr><td><input type="checkbox" id= "9" >9</td><td><input type="checkbox" id="24">24</td><td><input type="checkbox" id="39">39</td><td><input type="checkbox" id="54">54</td><td><input type="checkbox" id="69">69</td></tr>
-                    <tr><td><input type="checkbox" id="10">10</td><td><input type="checkbox" id="25">25</td><td><input type="checkbox" id="40">40</td><td><input type="checkbox" id="55">55</td><td><input type="checkbox" id="70">70</td></tr>
-                    <tr><td><input type="checkbox" id="11">11</td><td><input type="checkbox" id="26">26</td><td><input type="checkbox" id="41">41</td><td><input type="checkbox" id="56">56</td><td><input type="checkbox" id="71">71</td></tr>
-                    <tr><td><input type="checkbox" id="12">12</td><td><input type="checkbox" id="27">27</td><td><input type="checkbox" id="42">42</td><td><input type="checkbox" id="57">57</td><td><input type="checkbox" id="72">72</td></tr>
-                    <tr><td><input type="checkbox" id="13">13</td><td><input type="checkbox" id="28">28</td><td><input type="checkbox" id="43">43</td><td><input type="checkbox" id="58">58</td><td><input type="checkbox" id="73">73</td></tr>
-                    <tr><td><input type="checkbox" id="14">14</td><td><input type="checkbox" id="29">29</td><td><input type="checkbox" id="44">44</td><td><input type="checkbox" id="59">59</td><td><input type="checkbox" id="74">74</td></tr>
-                    <tr><td><input type="checkbox" id="15">15</td><td><input type="checkbox" id="30">30</td><td><input type="checkbox" id="45">45</td><td><input type="checkbox" id="60">60</td><td><input type="checkbox" id="75">75</td></tr>
-                </table>
-            </div>
-			<script>
-                var bingoSet = Array.from({length:76},(a,i)=>i);
-				function reset() {
-					bingoSet = Array.from({length:76},(a,i)=>i);
+		<div id="main">
+			<header>
+				<div><a href="/">&lt; HOME</a><div id="current">BINGO!</div></div><div><button onclick="reset()">Reset</button><button onclick='next()'>Next</button><button onclick="toggleDarkMode()">Dark/Light</button></div></header>
+			<table id="bingo">
+				<tr>
+					<!-- B Column -->
+					<td class="b-col">
+						<table id="b">
+							<tr><td><b>B</b></td></tr>
+							<tr><td><input type="checkbox" id="1">1</td></tr>
+							<tr><td><input type="checkbox" id="2">2</td></tr>
+							<tr><td><input type="checkbox" id="3">3</td></tr>
+							<tr><td><input type="checkbox" id="4">4</td></tr>
+							<tr><td><input type="checkbox" id="5">5</td></tr>
+							<tr><td><input type="checkbox" id="6">6</td></tr>
+							<tr><td><input type="checkbox" id="7">7</td></tr>
+							<tr><td><input type="checkbox" id="8">8</td></tr>
+							<tr><td><input type="checkbox" id="9">9</td></tr>
+							<tr><td><input type="checkbox" id="10">10</td></tr>
+							<tr><td><input type="checkbox" id="11">11</td></tr>
+							<tr><td><input type="checkbox" id="12">12</td></tr>
+							<tr><td><input type="checkbox" id="13">13</td></tr>
+							<tr><td><input type="checkbox" id="14">14</td></tr>
+							<tr><td><input type="checkbox" id="15">15</td></tr>
+						</table>
+					</td>
 
-                    for(i in bingoSet){
-                        if (i == 0) {continue;}
-                        document.getElementById(i.toString()).checked = false;
-                    }
-                    
-                    document.getElementById("current").innerText = "BINGO!"
-                }
-                function next() {
-                    ran = Math.ceil(Math.random()*(bingoSet.length-1))
-                    while (ran == 0 & bingoSet.length > 1) {
-                        ran = Math.floor(Math.random()*(bingoSet.length-1));
-                    }
-                    num = bingoSet.splice(ran,1)[0];
-                    
-                    if (num > 0){
-                       document.getElementById(num.toString()).checked = true;
-                    }
+					<!-- I Column -->
+					<td class="i-col">
+						<table id="i">
+							<tr><td><b>I</b></td></tr>
+							<tr><td><input type="checkbox" id="16">16</td></tr>
+							<tr><td><input type="checkbox" id="17">17</td></tr>
+							<tr><td><input type="checkbox" id="18">18</td></tr>
+							<tr><td><input type="checkbox" id="19">19</td></tr>
+							<tr><td><input type="checkbox" id="20">20</td></tr>
+							<tr><td><input type="checkbox" id="21">21</td></tr>
+							<tr><td><input type="checkbox" id="22">22</td></tr>
+							<tr><td><input type="checkbox" id="23">23</td></tr>
+							<tr><td><input type="checkbox" id="24">24</td></tr>
+							<tr><td><input type="checkbox" id="25">25</td></tr>
+							<tr><td><input type="checkbox" id="26">26</td></tr>
+							<tr><td><input type="checkbox" id="27">27</td></tr>
+							<tr><td><input type="checkbox" id="28">28</td></tr>
+							<tr><td><input type="checkbox" id="29">29</td></tr>
+							<tr><td><input type="checkbox" id="30">30</td></tr>
+						</table>
+					</td>
 
-                    switch (true){
-                        case num == 0 || num == undefined: num = "BINGO!";break;
-                        case  1 <= num && num <= 15: num = "B ".concat(num); break;
-                        case 16 <= num && num <= 30: num = "I ".concat(num); break;
-                        case 31 <= num && num <= 45: num = "N ".concat(num); break;
-                        case 46 <= num && num <= 60: num = "G ".concat(num); break;
-                        case 61 <= num && num <= 75: num = "O ".concat(num); break;
-                    }
-                    
-                    document.getElementById("current").innerText = num;
-                }
-                function toggleDarkMode() {
-                    document.body.classList.toggle('dark-mode');
-                }
-            </script>
+					<!-- N Column -->
+					<td class="n-col">
+						<table id="n">
+							<tr><td><b>N</b></td></tr>
+							<tr><td><input type="checkbox" id="31">31</td></tr>
+							<tr><td><input type="checkbox" id="32">32</td></tr>
+							<tr><td><input type="checkbox" id="33">33</td></tr>
+							<tr><td><input type="checkbox" id="34">34</td></tr>
+							<tr><td><input type="checkbox" id="35">35</td></tr>
+							<tr><td><input type="checkbox" id="36">36</td></tr>
+							<tr><td><input type="checkbox" id="37">37</td></tr>
+							<tr><td><input type="checkbox" id="38">38</td></tr>
+							<tr><td><input type="checkbox" id="39">39</td></tr>
+							<tr><td><input type="checkbox" id="40">40</td></tr>
+							<tr><td><input type="checkbox" id="41">41</td></tr>
+							<tr><td><input type="checkbox" id="42">42</td></tr>
+							<tr><td><input type="checkbox" id="43">43</td></tr>
+							<tr><td><input type="checkbox" id="44">44</td></tr>
+							<tr><td><input type="checkbox" id="45">45</td></tr>
+						</table>
+					</td>
+
+					<!-- G Column -->
+					<td class="g-col">
+						<table id="g">
+							<tr><td><b>G</b></td></tr>
+							<tr><td><input type="checkbox" id="46">46</td></tr>
+							<tr><td><input type="checkbox" id="47">47</td></tr>
+							<tr><td><input type="checkbox" id="48">48</td></tr>
+							<tr><td><input type="checkbox" id="49">49</td></tr>
+							<tr><td><input type="checkbox" id="50">50</td></tr>
+							<tr><td><input type="checkbox" id="51">51</td></tr>
+							<tr><td><input type="checkbox" id="52">52</td></tr>
+							<tr><td><input type="checkbox" id="53">53</td></tr>
+							<tr><td><input type="checkbox" id="54">54</td></tr>
+							<tr><td><input type="checkbox" id="55">55</td></tr>
+							<tr><td><input type="checkbox" id="56">56</td></tr>
+							<tr><td><input type="checkbox" id="57">57</td></tr>
+							<tr><td><input type="checkbox" id="58">58</td></tr>
+							<tr><td><input type="checkbox" id="59">59</td></tr>
+							<tr><td><input type="checkbox" id="60">60</td></tr>
+						</table>
+					</td>
+
+					<!-- O Column -->
+					<td class="o-col">
+						<table id="o">
+							<tr><td><b>O</b></td></tr>
+							<tr><td><input type="checkbox" id="61">61</td></tr>
+							<tr><td><input type="checkbox" id="62">62</td></tr>
+							<tr><td><input type="checkbox" id="63">63</td></tr>
+							<tr><td><input type="checkbox" id="64">64</td></tr>
+							<tr><td><input type="checkbox" id="65">65</td></tr>
+							<tr><td><input type="checkbox" id="66">66</td></tr>
+							<tr><td><input type="checkbox" id="67">67</td></tr>
+							<tr><td><input type="checkbox" id="68">68</td></tr>
+							<tr><td><input type="checkbox" id="69">69</td></tr>
+							<tr><td><input type="checkbox" id="70">70</td></tr>
+							<tr><td><input type="checkbox" id="71">71</td></tr>
+							<tr><td><input type="checkbox" id="72">72</td></tr>
+							<tr><td><input type="checkbox" id="73">73</td></tr>
+							<tr><td><input type="checkbox" id="74">74</td></tr>
+							<tr><td><input type="checkbox" id="75">75</td></tr>
+						</table>
+					</td>
+				</tr>
+			</table>
 		</div>
+		<script>
+			var bingoSet = Array.from({length:76},(a,i)=>i);
+			function reset() {
+				bingoSet = Array.from({length:76},(a,i)=>i);
+
+				for(i in bingoSet){
+					if (i == 0) {continue;}
+					document.getElementById(i.toString()).checked = false;
+				}
+				
+				document.getElementById("current").innerText = "BINGO!"
+			}
+			function next() {
+				ran = Math.ceil(Math.random()*(bingoSet.length-1))
+				while (ran == 0 & bingoSet.length > 1) {
+					ran = Math.floor(Math.random()*(bingoSet.length-1));
+				}
+				num = bingoSet.splice(ran,1)[0];
+				
+				if (num > 0){
+					document.getElementById(num.toString()).checked = true;
+				}
+
+				switch (true){
+					case num == 0 || num == undefined: num = "BINGO!";break;
+					case  1 <= num && num <= 15: num = "B ".concat(num); break;
+					case 16 <= num && num <= 30: num = "I ".concat(num); break;
+					case 31 <= num && num <= 45: num = "N ".concat(num); break;
+					case 46 <= num && num <= 60: num = "G ".concat(num); break;
+					case 61 <= num && num <= 75: num = "O ".concat(num); break;
+				}
+				
+				document.getElementById("current").innerText = num;
+			}
+			function toggleDarkMode() {
+				document.body.classList.toggle('dark-mode');
+			}
+		</script>
 	</body>
 </html>
