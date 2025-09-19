@@ -13,7 +13,7 @@
 				/*touch-action: none;*/ /* caused issued, iPhone still zoomed on double tap, and was stuck */
 			}
 			
-			header button { width: 31vw /*fit-content*/; height: 50%; font-size: inherit; display: inline-block; border: 1px solid; color: black;}
+			header button { width: 33vw /*fit-content*/; height: 50%; font-size: inherit; display: inline-block; border: 1px solid; color: black;}
 			
 			header { height: 10vh; font-size: 4vh; }
 
@@ -57,7 +57,7 @@
 	<body>
 		<div id="main">
 			<header>
-				<div><a href="/">&lt; HOME</a><div id="current">BINGO!</div><div><button onclick="reset()">Reset</button><button onclick='next()'>Next</button><button id="dark_light" onclick="toggleDarkMode()">Dark</button></div></header>
+				<div><a href="/">&lt; HOME</a><div id="current">BINGO!</div><div><button onclick="reset()">Reset</button><button onclick='next()'>Next</button><button id="dark" onclick="toggleDarkMode()">Dark</button></div></header>
 			<table id="bingo">
 				<tr>
 					<!-- B Column -->
@@ -208,7 +208,13 @@
 			}
 			function toggleDarkMode() {
 				document.body.classList.toggle('dark-mode');
-				document.getElementById().....
+				if (document.getElementById("dark")){
+					document.getElementById("dark").innerText = "Light"
+					document.getElementById("dark").id = "light"
+				} else {
+					document.getElementById("dark").innerText = "Dark"
+					document.getElementById("dark").id = "dark"
+				}
 			}
 		</script>
 	</body>
