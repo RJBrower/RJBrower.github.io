@@ -5,7 +5,6 @@
 <title>Dots & Boxes — Legacy</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <style>
-/* Simple, compatible CSS */
 html,body{height:100%;margin:0;background:#0b0f13;color:#eef0f2;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%}
 #menu{padding:14px;text-align:center}
 label{display:block;margin:8px 0 4px;color:#b7bec6;font-size:14px}
@@ -13,23 +12,15 @@ input[type=number], select, button{padding:8px 10px;border-radius:6px;border:1px
 button{cursor:pointer}
 #topbar{display:none;padding:8px 14px;align-items:center;justify-content:space-between;max-width:980px;margin:0 auto}
 .badge{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-weight:600;color:#e7e9eb}
-
-/* board area */
 #boardWrap{display:flex;align-items:center;justify-content:center;height:calc(100vh - 140px);padding:8px;box-sizing:border-box}
-#board{position:relative;background:transparent;touch-action:manipulation}
-
-/* visuals */
+#board{position:relative;background:transparent;touch-action:manipulation;opacity:0;transition:opacity 0.05s linear}
 .dot{position:absolute;border-radius:50%;background:#eef0f2;z-index:40;pointer-events:none;box-shadow:0 0 0 3px rgba(0,0,0,0.25) inset}
 .box{position:absolute;z-index:10;transition:background .12s ease}
 .edge-line{position:absolute;z-index:30;pointer-events:none;border-radius:999px;transition:background .12s ease, box-shadow .12s ease}
 .edge-hit{position:absolute;z-index:50;background:transparent;cursor:pointer}
-
-/* overlay */
 #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:9999}
 .panel{background:#091219;padding:14px;border-radius:10px;color:#eef0f2;min-width:260px;box-shadow:0 8px 20px rgba(0,0,0,0.6)}
 .results{margin-top:10px}
-
-/* small screens */
 @media (max-width:520px){
   label{font-size:13px}
   input[type=number], select, button{font-size:13px}
@@ -40,22 +31,18 @@ button{cursor:pointer}
 
 <div id="menu">
   <h2 style="margin:6px 0 8px">Dots & Boxes — Legacy</h2>
-
   <label>Rows (dots)
     <input id="rowsInput" type="number" min="3" max="30" value="11" />
   </label>
-
   <label>Cols (dots)
     <input id="colsInput" type="number" min="3" max="30" value="6" />
   </label>
-
   <label>Players
     <select id="playersInput">
       <option value="2">2</option><option value="3">3</option><option value="4">4</option>
       <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
     </select>
   </label>
-
   <div style="margin-top:12px">
     <button id="startBtn">Start</button>
   </div>
@@ -83,393 +70,133 @@ button{cursor:pointer}
 </div>
 
 <script>
-/* ES5-only legacy implementation */
-
-/* Player color palette (same feel as modern) */
 var PLAYER_HEX = ['#ff5252','#4cc9f0','#ffd166','#06d6a0','#f08cec','#ff8b3d','#bde0fe','#c78cff'];
+var rowsInput=document.getElementById('rowsInput');
+var colsInput=document.getElementById('colsInput');
+var playersInput=document.getElementById('playersInput');
+var startBtn=document.getElementById('startBtn');
+var menu=document.getElementById('menu');
+var boardWrap=document.getElementById('boardWrap');
+var board=document.getElementById('board');
+var topbar=document.getElementById('topbar');
+var turnBadge=document.getElementById('turnBadge');
+var liveScores=document.getElementById('liveScores');
+var changeBtn=document.getElementById('changeBtn');
+var overlay=document.getElementById('overlay');
+var results=document.getElementById('results');
+var closeOverlay=document.getElementById('closeOverlay');
+var playAgain=document.getElementById('playAgain');
 
-/* DOM refs */
-var rowsInput = document.getElementById('rowsInput');
-var colsInput = document.getElementById('colsInput');
-var playersInput = document.getElementById('playersInput');
-var startBtn = document.getElementById('startBtn');
-var menu = document.getElementById('menu');
-var boardWrap = document.getElementById('boardWrap');
-var board = document.getElementById('board');
-var topbar = document.getElementById('topbar');
-var turnBadge = document.getElementById('turnBadge');
-var liveScores = document.getElementById('liveScores');
-var changeBtn = document.getElementById('changeBtn');
-var overlay = document.getElementById('overlay');
-var results = document.getElementById('results');
-var closeOverlay = document.getElementById('closeOverlay');
-var playAgain = document.getElementById('playAgain');
+var R=11,C=6,PCOUNT=2;
+var players=[],turn=0,hEdges=[],vEdges=[],boxes=[],remainingEdges=0;
+var cellUnit=40,debounceTimer=null;
 
-/* state */
-var R = 11, C = 6, PCOUNT = 2;
-var players = []; // {name,color,fill,score}
-var turn = 0;
-var hEdges = []; // R x (C-1)
-var vEdges = []; // (R-1) x C
-var boxes = [];  // (R-1) x (C-1)
-var remainingEdges = 0;
-var cellUnit = 40; // fallback base unit (px)
-var debounceTimer = null;
+function hexToRgba(hex,alpha){var h=hex.replace('#','');var v=parseInt(h,16);var r=(v>>16)&255;var g=(v>>8)&255;var b=v&255;return'rgb('+r+','+g+','+b+','+alpha+')';}
+function makePlayers(n){var out=[];for(var i=0;i<n;i++){var color=PLAYER_HEX[i%PLAYER_HEX.length];out.push({name:'P'+(i+1),color:color,fill:hexToRgba(color,0.85),score:0});}return out;}
 
-/* helpers */
-function hexToRgba(hex, alpha) {
-  var h = hex.replace('#','');
-  var v = parseInt(h,16);
-  var r = (v >> 16) & 255;
-  var g = (v >> 8) & 255;
-  var b = v & 255;
-  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
-}
-
-/* create player structures */
-function makePlayers(n) {
-  var out = [];
-  for (var i = 0; i < n; i++) {
-    var color = PLAYER_HEX[i % PLAYER_HEX.length];
-    out.push({ name: 'P' + (i + 1), color: color, fill: hexToRgba(color, 0.85), score: 0 });
-  }
-  return out;
-}
-
-/* start game */
-startBtn.onclick = function () {
-  R = Math.max(3, Math.min(30, parseInt(rowsInput.value, 10) || 11));
-  C = Math.max(3, Math.min(30, parseInt(colsInput.value, 10) || 6));
-  PCOUNT = Math.max(2, Math.min(8, parseInt(playersInput.value, 10) || 2));
-  players = makePlayers(PCOUNT);
-  for (var pi = 0; pi < players.length; pi++) players[pi].score = 0;
-  turn = 0;
-  menu.style.display = 'none';
-  topbar.style.display = 'flex';
+startBtn.onclick=function(){
+  R=Math.max(3,Math.min(30,parseInt(rowsInput.value,10)||11));
+  C=Math.max(3,Math.min(30,parseInt(colsInput.value,10)||6));
+  PCOUNT=Math.max(2,Math.min(8,parseInt(playersInput.value,10)||2));
+  players=makePlayers(PCOUNT);
+  for(var pi=0;pi<players.length;pi++)players[pi].score=0;
+  turn=0;
+  menu.style.display='none';
+  topbar.style.display='flex';
   buildBoard();
 };
 
-changeBtn.onclick = function () {
-  // return to menu
-  menu.style.display = '';
-  topbar.style.display = 'none';
-  board.innerHTML = '';
-  overlay.style.display = 'none';
-};
+changeBtn.onclick=function(){menu.style.display='';topbar.style.display='none';board.innerHTML='';overlay.style.display='none';};
 
-/* build board (absolute layout) */
-function buildBoard() {
-  board.innerHTML = '';
+function buildBoard(){
+  board.innerHTML='';
+  var wrapRect=boardWrap.getBoundingClientRect?boardWrap.getBoundingClientRect():{width:boardWrap.clientWidth,height:boardWrap.clientHeight};
+  var availableW=Math.max(160,wrapRect.width-16);
+  var availableH=Math.max(160,wrapRect.height-16);
+  var unit=Math.floor(Math.min(availableW/(C-1),availableH/(R-1)));
+  if(unit<20)unit=20;if(unit>72)unit=72;
+  cellUnit=unit;
+  var boardW=(C-1)*unit;
+  var boardH=(R-1)*unit;
+  board.style.width=boardW+'px';board.style.height=boardH+'px';
+  hEdges=[];for(var r=0;r<R;r++){hEdges[r]=[];for(var c=0;c<C-1;c++)hEdges[r][c]=0;}
+  vEdges=[];for(var r2=0;r2<R-1;r2++){vEdges[r2]=[];for(var c2=0;c2<C;c2++)vEdges[r2][c2]=0;}
+  boxes=[];for(var br=0;br<R-1;br++){boxes[br]=[];for(var bc=0;bc<C-1;bc++)boxes[br][bc]=null;}
+  remainingEdges=R*(C-1)+(R-1)*C;
 
-  // compute available size inside boardWrap
-  var wrapRect = boardWrap.getBoundingClientRect ? boardWrap.getBoundingClientRect() : { width: boardWrap.clientWidth, height: boardWrap.clientHeight };
-  var availableW = Math.max(160, wrapRect.width - 16);
-  var availableH = Math.max(160, wrapRect.height - 16);
+  for(var rr=0;rr<R-1;rr++){for(var cc=0;cc<C-1;cc++){
+    var b=document.createElement('div');
+    b.className='box';b.style.left=(cc*unit)+'px';b.style.top=(rr*unit)+'px';b.style.width=unit+'px';b.style.height=unit+'px';
+    b.setAttribute('data-r',rr);b.setAttribute('data-c',cc);board.appendChild(b);
+  }}
 
-  // compute unit (distance between dots)
-  var unit = Math.floor(Math.min(availableW / (C - 1), availableH / (R - 1)));
-  if (unit < 20) unit = 20;          // minimum
-  if (unit > 72) unit = 72;          // cap on huge screens
-  cellUnit = unit;
+  for(var hr=0;hr<R;hr++){for(var hc=0;hc<C-1;hc++){createEdge('H',hr,hc,unit,Math.max(2,Math.round(unit*0.09)));}}
+  for(var vr=0;vr<R-1;vr++){for(var vc=0;vc<C;vc++){createEdge('V',vr,vc,Math.max(2,Math.round(unit*0.09)),unit);}}
 
-  // set board size
-  var boardW = (C - 1) * unit;
-  var boardH = (R - 1) * unit;
-  board.style.width = boardW + 'px';
-  board.style.height = boardH + 'px';
-
-  // reset state arrays
-  hEdges = [];
-  for (var r = 0; r < R; r++) { hEdges[r] = []; for (var c = 0; c < C - 1; c++) hEdges[r][c] = 0; }
-  vEdges = [];
-  for (var r2 = 0; r2 < R - 1; r2++) { vEdges[r2] = []; for (var c2 = 0; c2 < C; c2++) vEdges[r2][c2] = 0; }
-  boxes = [];
-  for (var br = 0; br < R - 1; br++) { boxes[br] = []; for (var bc = 0; bc < C - 1; bc++) boxes[br][bc] = null; }
-  remainingEdges = R * (C - 1) + (R - 1) * C;
-
-  // create boxes first (under everything) so fills render under lines/dots
-  for (var rr = 0; rr < R - 1; rr++) {
-    for (var cc = 0; cc < C - 1; cc++) {
-      var b = document.createElement('div');
-      b.className = 'box';
-      b.style.left = (cc * unit) + 'px';
-      b.style.top = (rr * unit) + 'px';
-      b.style.width = unit + 'px';
-      b.style.height = unit + 'px';
-      b.setAttribute('data-r', rr);
-      b.setAttribute('data-c', cc);
-      board.appendChild(b);
-    }
-  }
-
-  // horizontal edges (visual then hit)
-  for (var hr = 0; hr < R; hr++) {
-    for (var hc = 0; hc < C - 1; hc++) {
-      createEdge('H', hr, hc, unit, unit * 0.09 || 4);
-    }
-  }
-
-  // vertical edges
-  for (var vr = 0; vr < R - 1; vr++) {
-    for (var vc = 0; vc < C; vc++) {
-      createEdge('V', vr, vc, unit * 0.09 || 4, unit);
-    }
-  }
-
-  // dots last so they visually sit on top
-  var dotSize = Math.max(6, Math.round(unit * 0.22));
-  for (var dr = 0; dr < R; dr++) {
-    for (var dc = 0; dc < C; dc++) {
-      var d = document.createElement('div');
-      d.className = 'dot';
-      d.style.width = dotSize + 'px';
-      d.style.height = dotSize + 'px';
-      d.style.left = (dc * unit - dotSize / 2) + 'px';
-      d.style.top = (dr * unit - dotSize / 2) + 'px';
-      board.appendChild(d);
-    }
-  }
+  var dotSize=Math.max(6,Math.round(unit*0.22));
+  for(var dr=0;dr<R;dr++){for(var dc=0;dc<C;dc++){
+    var d=document.createElement('div');d.className='dot';d.style.width=dotSize+'px';d.style.height=dotSize+'px';
+    d.style.left=(dc*unit-dotSize/2)+'px';d.style.top=(dr*unit-dotSize/2)+'px';board.appendChild(d);
+  }}
 
   updateHUD();
+
+  // Force immediate paint on iOS 10
+  board.style.opacity='0';
+  void board.offsetHeight;
+  setTimeout(function(){board.style.opacity='1';},0);
 }
 
-/* createEdge - adds visual line and separate hit element */
-function createEdge(type, r, c, w, h) {
-  // compute position: (x,y) is intersection coordinate of top-left dot at (c,r)
-  var x = c * (type === 'H' ? 1 : 1); // c * unit later used
-  var y = r * (type === 'H' ? 1 : 1);
-
-  var unit = cellUnit;
-  var line = document.createElement('div');
-  line.className = 'edge-line';
-  line.setAttribute('data-type', type);
-  line.setAttribute('data-r', r);
-  line.setAttribute('data-c', c);
-
-  if (type === 'H') {
-    // horizontal: left at c*unit, top slightly above center so dot centers align
-    line.style.width = (unit + (unit * 0.08)) + 'px'; // slight overflow for compact look
-    var lineH = Math.max(2, Math.round(unit * 0.09));
-    line.style.height = lineH + 'px';
-    line.style.left = (c * unit - (unit * 0.04)) + 'px'; // nudge left for overflow
-    line.style.top = (r * unit - lineH / 2) + 'px';
-  } else {
-    // vertical
-    var lineW = Math.max(2, Math.round(unit * 0.09));
-    line.style.width = lineW + 'px';
-    line.style.height = (unit + (unit * 0.08)) + 'px';
-    line.style.left = (c * unit - lineW / 2) + 'px';
-    line.style.top = (r * unit - (unit * 0.04)) + 'px';
+function createEdge(type,r,c,w,h){
+  var unit=cellUnit;
+  var line=document.createElement('div');line.className='edge-line';
+  line.setAttribute('data-type',type);line.setAttribute('data-r',r);line.setAttribute('data-c',c);
+  if(type==='H'){var lineH=Math.max(2,Math.round(unit*0.09));line.style.height=lineH+'px';line.style.width=(unit+unit*0.08)+'px';
+    line.style.left=(c*unit-unit*0.04)+'px';line.style.top=(r*unit-lineH/2)+'px';
+  } else {var lineW=Math.max(2,Math.round(unit*0.09));line.style.width=lineW+'px';line.style.height=(unit+unit*0.08)+'px';
+    line.style.left=(c*unit-lineW/2)+'px';line.style.top=(r*unit-unit*0.04)+'px';
   }
   board.appendChild(line);
-
-  // hit area (slightly larger than visual line)
-  var hit = document.createElement('div');
-  hit.className = 'edge-hit';
-  // size hitbox at 1.2x visual extents
-  var hitW = (type === 'H') ? (unit * 1.2) : (Math.max(2, Math.round(unit * 0.09)) * 1.2);
-  var hitH = (type === 'H') ? (Math.max(2, Math.round(unit * 0.09)) * 1.2) : (unit * 1.2);
-  hit.style.width = Math.round(hitW) + 'px';
-  hit.style.height = Math.round(hitH) + 'px';
-  // center hit over the logical segment midpoint
-  if (type === 'H') {
-    hit.style.left = (c * unit + unit / 2 - hitW / 2) + 'px';
-    hit.style.top = (r * unit - hitH / 2) + 'px';
-  } else {
-    hit.style.left = (c * unit - hitW / 2) + 'px';
-    hit.style.top = (r * unit + unit / 2 - hitH / 2) + 'px';
-  }
-
-  // assign click handler
-  // Using .onclick for compatibility
-  hit.onclick = function () {
-    onEdgeClick(type, r, c, line);
-  };
-
+  var hit=document.createElement('div');hit.className='edge-hit';
+  var hitW=(type==='H')?unit*1.2:Math.max(2,Math.round(unit*0.09))*1.2;
+  var hitH=(type==='H')?Math.max(2,Math.round(unit*0.09))*1.2:unit*1.2;
+  hit.style.width=Math.round(hitW)+'px';hit.style.height=Math.round(hitH)+'px';
+  if(type==='H'){hit.style.left=(c*unit+unit/2-hitW/2)+'px';hit.style.top=(r*unit-hitH/2)+'px';
+  } else {hit.style.left=(c*unit-hitW/2)+'px';hit.style.top=(r*unit+unit/2-hitH/2)+'px';}
+  hit.onclick=function(){onEdgeClick(type,r,c,line);};
   board.appendChild(hit);
 }
 
-/* edge click handler */
-function onEdgeClick(type, r, c, lineEl) {
-  // prevent double claim
-  if (type === 'H') {
-    if (hEdges[r][c]) return;
-    hEdges[r][c] = turn + 1; // store 1-based player index
-  } else {
-    if (vEdges[r][c]) return;
-    vEdges[r][c] = turn + 1;
-  }
-
+function onEdgeClick(type,r,c,lineEl){
+  if(type==='H'){if(hEdges[r][c])return;hEdges[r][c]=turn+1;}else{if(vEdges[r][c])return;vEdges[r][c]=turn+1;}
   remainingEdges--;
-
-  // color the visual line
-  var color = players[turn].color;
-  lineEl.style.background = color;
-  lineEl.style.boxShadow = '0 0 8px ' + color + '55';
-
-  // check for completed boxes adjacent to this edge
-  var touched = boxesAdjacent(type, r, c);
-  var scored = false;
-  for (var i = 0; i < touched.length; i++) {
-    var br = touched[i][0], bc = touched[i][1];
-    if (boxes[br][bc] === null && isComplete(br, bc)) {
-      boxes[br][bc] = turn;
-      players[turn].score++;
-      paintBox(br, bc, players[turn].fill);
-      scored = true;
-    }
-  }
-
-  // advance turn only if no score
-  if (!scored) {
-    turn = (turn + 1) % players.length;
-  }
-
+  var color=players[turn].color;lineEl.style.background=color;lineEl.style.boxShadow='0 0 8px '+color+'55';
+  var touched=boxesAdjacent(type,r,c);var scored=false;
+  for(var i=0;i<touched.length;i++){var br=touched[i][0],bc=touched[i][1];if(boxes[br][bc]===null&&isComplete(br,bc)){boxes[br][bc]=turn;players[turn].score++;paintBox(br,bc,players[turn].fill);scored=true;}}
+  if(!scored){turn=(turn+1)%players.length;}
   updateHUD();
-
-  if (remainingEdges === 0) {
-    showResults();
-  }
+  if(remainingEdges===0){showResults();}
 }
 
-/* returns list of adjacent boxes [ [r,c], ... ] */
-function boxesAdjacent(type, r, c) {
-  var list = [];
-  if (type === 'H') {
-    // top box
-    if (r - 1 >= 0 && c >= 0 && c < C - 1) list.push([r - 1, c]);
-    // bottom box
-    if (r >= 0 && r < R - 1 && c >= 0 && c < C - 1) list.push([r, c]);
-  } else {
-    // left box
-    if (c - 1 >= 0 && r >= 0 && r < R - 1) list.push([r, c - 1]);
-    // right box
-    if (c >= 0 && c < C - 1 && r >= 0 && r < R - 1) list.push([r, c]);
-  }
-  return list;
-}
+function boxesAdjacent(type,r,c){var list=[];if(type==='H'){if(r-1>=0&&c>=0&&c<C-1)list.push([r-1,c]);if(r>=0&&r<R-1&&c<C-1)list.push([r,c]);}else{if(c-1>=0&&r>=0&&r<R-1)list.push([r,c-1]);if(c>=0&&c<C-1&&r<R-1)list.push([r,c]);}return list;}
 
-/* test if box completed */
-function isComplete(br, bc) {
-  // hEdges[br][bc], hEdges[br+1][bc], vEdges[br][bc], vEdges[br][bc+1]
-  if (!hEdges[br][bc]) return false;
-  if (!hEdges[br + 1][bc]) return false;
-  if (!vEdges[br][bc]) return false;
-  if (!vEdges[br][bc + 1]) return false;
-  return true;
-}
+function isComplete(br,bc){if(!hEdges[br][bc])return false;if(!hEdges[br+1][bc])return false;if(!vEdges[br][bc])return false;if(!vEdges[br][bc+1])return false;return true;}
+function paintBox(br,bc,fill){var boxesEls=board.getElementsByClassName('box');for(var i=0;i<boxesEls.length;i++){var el=boxesEls[i];if(parseInt(el.getAttribute('data-r'),10)===br&&parseInt(el.getAttribute('data-c'),10)===bc){el.style.background=fill;el.style.opacity=1;break;}}}
 
-/* paint box fill */
-function paintBox(br, bc, fill) {
-  // find box element
-  var boxesEls = board.getElementsByClassName('box');
-  for (var i = 0; i < boxesEls.length; i++) {
-    var el = boxesEls[i];
-    if (parseInt(el.getAttribute('data-r'), 10) === br && parseInt(el.getAttribute('data-c'), 10) === bc) {
-      el.style.background = fill;
-      el.style.opacity = 1;
-      break;
-    }
-  }
-}
+function updateHUD(){
+  turnBadge.textContent='Turn: '+players[turn].name+' | '+R+'x'+C;
+  liveScores.innerHTML='';for(var i=0;i<players.length;i++){var wrap=document.createElement('div');wrap.style.display='flex';wrap.style.alignItems='center';wrap.style.gap='8px';var dot=document.createElement('div');dot.style.width='12px';dot.style.height='12px';dot.style.borderRadius='50%';dot.style.background=players[i].color;dot.style.boxShadow='0 0 0 2px rgba(0,0,0,0.25) inset';var txt=document.createElement('div');txt.style.fontSize='13px';txt.style.marginLeft='6px';txt.textContent=players[i].name+': '+players[i].score;wrap.appendChild(dot);wrap.appendChild(txt);liveScores.appendChild(wrap);}}
 
-/* HUD update */
-function updateHUD() {
-  // show Turn and board size
-  turnBadge.textContent = 'Turn: ' + players[turn].name + ' | ' + R + 'x' + C;
+function showResults(){var res=[];for(var i=0;i<players.length;i++)res.push({idx:i,name:players[i].name,score:players[i].score,color:players[i].color});res.sort(function(a,b){return b.score-a.score;});results.innerHTML='';for(var j=0;j<res.length;j++){var row=document.createElement('div');row.style.display='flex';row.style.justifyContent='space-between';row.style.alignItems='center';row.style.marginBottom='8px';var left=document.createElement('div');left.style.display='flex';left.style.alignItems='center';left.style.gap='8px';var dot=document.createElement('div');dot.style.width='14px';dot.style.height='14px';dot.style.borderRadius='50%';dot.style.background=res[j].color;var name=document.createElement('div');name.textContent=res[j].name;left.appendChild(dot);left.appendChild(name);var score=document.createElement('div');score.textContent=res[j].score;row.appendChild(left);row.appendChild(score);results.appendChild(row);}
+overlay.style.display='flex';}
 
-  // live scores
-  liveScores.innerHTML = '';
-  for (var i = 0; i < players.length; i++) {
-    var wrap = document.createElement('div');
-    wrap.style.display = 'flex';
-    wrap.style.alignItems = 'center';
-    wrap.style.gap = '8px';
-    var dot = document.createElement('div');
-    dot.style.width = '12px';
-    dot.style.height = '12px';
-    dot.style.borderRadius = '50%';
-    dot.style.background = players[i].color;
-    dot.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.25) inset';
-    var txt = document.createElement('div');
-    txt.style.fontSize = '13px';
-    txt.style.marginLeft = '6px';
-    txt.textContent = players[i].name + ': ' + players[i].score;
-    wrap.appendChild(dot);
-    wrap.appendChild(txt);
-    liveScores.appendChild(wrap);
-  }
-}
+closeOverlay.onclick=function(){overlay.style.display='none';};
+playAgain.onclick=function(){overlay.style.display='none';menu.style.display='';topbar.style.display='none';board.innerHTML='';};
 
-/* show results overlay */
-function showResults() {
-  // build sorted results
-  var res = [];
-  for (var i = 0; i < players.length; i++) { res.push({ idx: i, name: players[i].name, score: players[i].score, color: players[i].color }); }
-  res.sort(function (a, b) { return b.score - a.score; });
+function onResizeDebounced(){if(debounceTimer){clearTimeout(debounceTimer);}debounceTimer=setTimeout(function(){if(menu.style.display==='none'){buildBoard();}},120);}
+if(window.addEventListener){window.addEventListener('resize',onResizeDebounced,false);}else{window.onresize=onResizeDebounced;}
 
-  // populate overlay
-  results.innerHTML = '';
-  for (var j = 0; j < res.length; j++) {
-    var row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.justifyContent = 'space-between';
-    row.style.alignItems = 'center';
-    row.style.marginBottom = '8px';
-    var left = document.createElement('div');
-    left.style.display = 'flex';
-    left.style.alignItems = 'center';
-    left.style.gap = '8px';
-    var dot = document.createElement('div');
-    dot.style.width = '14px';
-    dot.style.height = '14px';
-    dot.style.borderRadius = '50%';
-    dot.style.background = res[j].color;
-    var name = document.createElement('div');
-    name.textContent = res[j].name;
-    left.appendChild(dot);
-    left.appendChild(name);
-    var score = document.createElement('div');
-    score.textContent = res[j].score;
-    row.appendChild(left);
-    row.appendChild(score);
-    results.appendChild(row);
-  }
-
-  overlay.style.display = 'flex';
-}
-
-/* overlay controls */
-closeOverlay.onclick = function () { overlay.style.display = 'none'; };
-playAgain.onclick = function () {
-  overlay.style.display = 'none';
-  // reset to menu
-  menu.style.display = '';
-  topbar.style.display = 'none';
-  board.innerHTML = '';
-};
-
-/* resize handler - rebuild board to adapt */
-function onResizeDebounced() {
-  if (debounceTimer) { clearTimeout(debounceTimer); }
-  debounceTimer = setTimeout(function () {
-    // rebuild if game is active (menu hidden)
-    if (menu.style.display === 'none') {
-      buildBoard();
-    }
-  }, 120);
-}
-if (window.addEventListener) {
-  window.addEventListener('resize', onResizeDebounced, false);
-} else {
-  window.onresize = onResizeDebounced;
-}
-
-/* initial small safety: ensure playersInput default exists */
-(function boot() {
-  // already has options in HTML; ensure default selected
-  playersInput.value = '2';
-})();
+(function boot(){playersInput.value='2';})();
 </script>
 </body>
 </html>
